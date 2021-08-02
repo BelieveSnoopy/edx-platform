@@ -66,8 +66,11 @@ class CourseGoalsSerializer(serializers.Serializer):
     """
     Serializer for Course Goal data
     """
-    goal_options = serializers.ListField()
+    goal_options = serializers.SerializerMethodField()
     selected_goal = serializers.DictField()
+
+    def get_goal_options(self, goals):
+        return goals.get('goal_options', [])
 
 
 class CourseToolSerializer(serializers.Serializer):

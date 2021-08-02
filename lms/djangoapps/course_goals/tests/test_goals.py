@@ -2,6 +2,7 @@
 Unit tests for course_goals djangoapp
 """
 
+import json
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -49,15 +50,15 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         Sends a post request to set a course goal and returns the response.
         """
         post_data = {
-            'course_id': self.course.id,
+            'course_id': str(self.course.id),
             'user': self.user.username,
         }
         if number is not None:
-            post_data['number_of_days_with_visits_per_week_goal'] = number
+            post_data['days_per_week'] = number
         if subscribed is not None:
             post_data['subscribed_to_goal_reminders'] = subscribed
 
-        response = self.client.post(self.apiUrl, post_data)
+        response = self.client.post(self.apiUrl, json.dumps(post_data), content_type='application/json')
         return response
 
     @mock.patch('lms.djangoapps.course_goals.handlers.segment.track')
@@ -67,14 +68,14 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         self.save_course_goal(1, True)
         segment_call.assert_called_once_with(self.user.id, EVENT_NAME_ADDED, {
             'courserun_key': str(self.course.id),
-            'number_of_days_with_visits_per_week_goal': 1,
+            'days_per_week': 1,
             'subscribed_to_goal_reminders': True,
             'goal_key': 'unsure',
         })
 
         current_goals = CourseGoal.objects.filter(user=self.user, course_key=self.course.id)
         assert len(current_goals) == 1
-        assert current_goals[0].number_of_days_with_visits_per_week_goal == 1
+        assert current_goals[0].days_per_week == 1
         assert current_goals[0].subscribed_to_goal_reminders is True
 
     @mock.patch('lms.djangoapps.course_goals.handlers.segment.track')
@@ -84,7 +85,7 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         self.save_course_goal(1, True)
         segment_call.assert_called_with(self.user.id, EVENT_NAME_ADDED, {
             'courserun_key': str(self.course.id),
-            'number_of_days_with_visits_per_week_goal': 1,
+            'days_per_week': 1,
             'subscribed_to_goal_reminders': True,
             'goal_key': 'unsure',
         })
@@ -92,7 +93,7 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         self.save_course_goal(3, True)
         segment_call.assert_called_with(self.user.id, EVENT_NAME_UPDATED, {
             'courserun_key': str(self.course.id),
-            'number_of_days_with_visits_per_week_goal': 3,
+            'days_per_week': 3,
             'subscribed_to_goal_reminders': True,
             'goal_key': 'unsure',
         })
@@ -100,14 +101,14 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         self.save_course_goal(5, False)
         segment_call.assert_called_with(self.user.id, EVENT_NAME_UPDATED, {
             'courserun_key': str(self.course.id),
-            'number_of_days_with_visits_per_week_goal': 5,
+            'days_per_week': 5,
             'subscribed_to_goal_reminders': False,
             'goal_key': 'unsure',
         })
 
         current_goals = CourseGoal.objects.filter(user=self.user, course_key=self.course.id)
         assert len(current_goals) == 1
-        assert current_goals[0].number_of_days_with_visits_per_week_goal == 5
+        assert current_goals[0].days_per_week == 5
         assert current_goals[0].subscribed_to_goal_reminders is False
 
     def test_add_without_required_arguments(self):
@@ -116,7 +117,7 @@ class TestCourseGoalsAPI(SharedModuleStoreTestCase):
         assert len(CourseGoal.objects.filter(user=self.user, course_key=self.course.id)) == 0
         self.assertContains(
             response=response,
-            text="'number_of_days_with_visits_per_week_goal' and 'subscribed_to_goal_reminders' are required.",
+            text="'days_per_week' and 'subscribed_to_goal_reminders' are required.",
             status_code=400
         )
 
