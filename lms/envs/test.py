@@ -597,3 +597,6 @@ REGISTRATION_RATELIMIT = '5/minute'
 
 RESET_PASSWORD_TOKEN_VALIDATE_API_RATELIMIT = '2/m'
 RESET_PASSWORD_API_RATELIMIT = '2/m'
+
+################## Name Affirmation ########################
+INSTALLED_APPS += ['edx_name_affirmation']
